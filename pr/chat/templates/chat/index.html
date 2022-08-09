@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1> count page </h1>
+    <h2 id="ct"></h2>
+    <textarea  id="chat-log" cols="100" rows="20">
+        {% for chat in chats %}
+            {{chat.content}}
+        {% endfor %}
+    </textarea></br>
+    <input type="text" id="chat-message-input" size="100"></br>
+    <input type="button" value="submit" id="chat-message-submit">
+    {{group_name|json_script:"group-name"}}
+    <script>
+        const groupname = JSON.parse(document.getElementById("group-name").textContent)
+        var ws = new WebSocket(
+            'ws://' + window.location.host + "/ws/sc/" + groupname + '/'
+        )
+        // ws.onopen = function(){
+        //     console.log('Websocket connection open...')
+        // }
+
+        ws.onmessage = function(event){
+            data = JSON.parse(event['data'])
+            document.getElementById('chat-log').value +=data['user'] +":"+data['msg'] +'\n'
+        }
+
+        ws.onerror = function(event){
+            console.log('Errrorr....',event)
+        }
+
+        ws.onclose = function(event){
+            console.log('Connection closed.....',event)
+        }
+
+        document.getElementById('chat-message-input').focus()
+        document.getElementById('chat-message-input').onkeyup = function(event){
+            if (event.keyCode === 13){
+                document.getElementById('chat-message-submit').click();
+            }
+        }
+        document.getElementById('chat-message-submit').onclick = function(event){
+            var message = document.getElementById('chat-message-input').value
+            ws.send(JSON.stringify({
+                'msg': message
+            }))
+            document.getElementById('chat-message-input').value = ''
+        }
+    </script>
+</body>
+</html>
